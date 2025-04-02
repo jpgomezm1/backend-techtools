@@ -24,7 +24,7 @@ class User:
         Returns:
             tuple: (bool, dict or str) - (éxito, datos del usuario o mensaje de error)
         """
-        # Validar campos requeridos
+        # Validar campos requeridos (se elimina "phone" para que sea opcional)
         required_fields = ['name', 'email', 'country', 'userType']
         for field in required_fields:
             if field not in user_data or not user_data[field]:
@@ -49,12 +49,13 @@ class User:
             if 'projectDescription' not in user_data or not user_data['projectDescription']:
                 return False, "El campo projectDescription es requerido"
         
-        # Verificar si el email ya existe
-        existing_user = mongo.db.users.find_one({'email': user_data['email']})
-        if existing_user:
-            return False, "Este email ya está registrado"
+        # La siguiente verificación de email duplicado se ha eliminado para permitir
+        # registros múltiples con el mismo correo en entorno de pruebas
+        # existing_user = mongo.db.users.find_one({'email': user_data['email']})
+        # if existing_user:
+        #     return False, "Este email ya está registrado"
         
-        # Añadir fecha de registro
+        # Añadir fecha de registro y estado de verificación
         user_data['registrationDate'] = datetime.utcnow()
         user_data['isVerified'] = False
         

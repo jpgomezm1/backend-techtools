@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from app.models.user import User
 from app.utils.auth import generate_token
-from app.utils.email_sender import send_welcome_email
+from app.utils.email_sender import send_welcome_email, notify_admin_new_registration
 
 user_bp = Blueprint('users', __name__)
 
@@ -26,20 +26,27 @@ def register():
             '_id': result['_id'],
             'name': result['name'],
             'email': result['email'],
+            'phone': result.get('phone'),
             'userType': result['userType'],
             'country': result['country'],
             'token': token
         }
         
-        # Enviar correo de bienvenida (asíncrono para no bloquear la respuesta)
+        # Enviar correo de bienvenida al usuario
         try:
-            # Para el sandbox, necesitas añadir destinatarios autorizados
-            # Solo enviamos correo si el usuario está en tu lista de destinatarios autorizados
             send_welcome_email(result)
             current_app.logger.info(f"Correo de bienvenida enviado a {result['email']}")
         except Exception as e:
             # Registro del error pero continuamos con el flujo
-            current_app.logger.error(f"Error al enviar correo: {str(e)}")
+            current_app.logger.error(f"Error al enviar correo de bienvenida: {str(e)}")
+        
+        # Enviar notificación a los administradores
+        try:
+            notify_admin_new_registration(result)
+            current_app.logger.info("Notificación de nuevo registro enviada a los administradores")
+        except Exception as e:
+            # Registro del error pero continuamos con el flujo
+            current_app.logger.error(f"Error al enviar notificación a administradores: {str(e)}")
         
         return jsonify(response), 201
     else:
